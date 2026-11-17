@@ -1,0 +1,7 @@
+BookID,Title,Author,Publisher,PublicationYear,IsAvailable
+B101,The C++ Programming Language,Bjarne Stroustrup,Addison-Wesley,2013,1
+B102,Clean Code,Robert C. Martin,Prentice Hall,2008,1
+B103,Design Patterns,Erich Gamma et al.,Addison-Wesley,1994,1
+B104,Introduction to Algorithms,Thomas H. Cormen,MIT Press,2009,0
+B105,The Pragmatic Programmer,Andrew Hunt & David Thomas,Addison-Wesley,1999,1
+B106,Structure and Interpretation of Computer Programs,Harold Abelson,MIT Press,1996,1

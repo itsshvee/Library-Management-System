@@ -1,0 +1,4 @@
+TransactionID,BookID,BookTitle,BorrowerName,Type,Timestamp
+TXN-00001,B104,Introduction to Algorithms,Alice Smith,ISSUE,2026-11-16 10:15:00
+TXN-00002,B102,Clean Code,Kriss,ISSUE,2026-11-17 00:48:56
+TXN-00003,B102,Clean Code,Kriss,RETURN,2026-11-17 00:48:56

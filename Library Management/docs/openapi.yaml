@@ -1,0 +1,345 @@
+openapi: 3.0.3
+info:
+  title: Library Management System API
+  description: |
+    Enterprise REST API for Library Management System built with C++17 and Drogon framework, backed by PostgreSQL.
+    Provides complete book catalog management, borrowing/returning workflows, and dashboard analytics.
+  version: 1.0.0
+  contact:
+    name: System Administrator
+    email: admin@library.com
+
+servers:
+  - url: http://localhost:8080
+    description: Local C++ Drogon API Server
+  - url: http://backend:8080
+    description: Docker Internal Network
+
+paths:
+  /api/health:
+    get:
+      summary: Health Check
+      description: Returns health status of the backend Drogon service.
+      responses:
+        '200':
+          description: Service is healthy and reachable.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+                  framework:
+                    type: string
+                    example: Drogon (C++17)
+                  service:
+                    type: string
+                    example: Library Management System API
+
+  /api/dashboard/stats:
+    get:
+      summary: Dashboard Analytics
+      description: Returns real-time counts for total books, available books, issued books, and total transactions.
+      responses:
+        '200':
+          description: Real-time statistics.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardStats'
+
+  /api/books:
+    get:
+      summary: List or Search Books
+      description: Retrieve catalog books with optional keyword search and availability filter.
+      parameters:
+        - name: search
+          in: query
+          description: Case-insensitive substring query on Book ID, Title, or Author.
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter books by availability status.
+          required: false
+          schema:
+            type: string
+            enum: [all, available, issued]
+            default: all
+      responses:
+        '200':
+          description: List of matching books.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Book'
+
+    post:
+      summary: Add New Book
+      description: Register a new book record into the library catalog. Prevents duplicate Book IDs.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookInput'
+      responses:
+        '201':
+          description: Book successfully created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '400':
+          description: Invalid input or missing required fields.
+        '409':
+          description: Duplicate book ID.
+
+  /api/books/{id}:
+    get:
+      summary: Get Book by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique Book ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Book found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '404':
+          description: Book not found.
+
+    put:
+      summary: Update Book Details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBookInput'
+      responses:
+        '200':
+          description: Book updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '404':
+          description: Book not found.
+
+    delete:
+      summary: Delete Book
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Book deleted successfully.
+        '404':
+          description: Book not found.
+
+  /api/transactions/issue:
+    post:
+      summary: Issue a Book
+      description: Checks out an available book to a designated borrower, marks book as issued, and logs an ISSUE transaction.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IssueInput'
+      responses:
+        '201':
+          description: Book issued successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Book is already issued or missing borrower name.
+        '404':
+          description: Book not found.
+
+  /api/transactions/return:
+    post:
+      summary: Return an Issued Book
+      description: Returns a currently issued book to the catalog, restores availability, and logs a RETURN transaction.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReturnInput'
+      responses:
+        '200':
+          description: Book returned successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Book is already available (not checked out).
+        '404':
+          description: Book not found.
+
+  /api/transactions:
+    get:
+      summary: Transaction History Audit Trail
+      description: Returns list of all borrowing and return transactions ordered chronologically descending.
+      responses:
+        '200':
+          description: List of transactions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+
+components:
+  schemas:
+    Book:
+      type: object
+      properties:
+        id:
+          type: string
+          example: B101
+        title:
+          type: string
+          example: The C++ Programming Language
+        author:
+          type: string
+          example: Bjarne Stroustrup
+        publisher:
+          type: string
+          example: Addison-Wesley
+        year:
+          type: integer
+          example: 2013
+        isAvailable:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          example: "2026-11-17 01:00:00"
+        updatedAt:
+          type: string
+          example: "2026-11-17 01:00:00"
+
+    CreateBookInput:
+      type: object
+      required:
+        - id
+        - title
+        - author
+        - year
+      properties:
+        id:
+          type: string
+          example: B107
+        title:
+          type: string
+          example: Domain-Driven Design
+        author:
+          type: string
+          example: Eric Evans
+        publisher:
+          type: string
+          example: Addison-Wesley
+        year:
+          type: integer
+          example: 2003
+
+    UpdateBookInput:
+      type: object
+      properties:
+        title:
+          type: string
+        author:
+          type: string
+        publisher:
+          type: string
+        year:
+          type: integer
+
+    IssueInput:
+      type: object
+      required:
+        - bookId
+        - borrowerName
+      properties:
+        bookId:
+          type: string
+          example: B101
+        borrowerName:
+          type: string
+          example: Alice Johnson
+
+    ReturnInput:
+      type: object
+      required:
+        - bookId
+      properties:
+        bookId:
+          type: string
+          example: B101
+
+    Transaction:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          example: TXN-1700000000
+        bookId:
+          type: string
+          example: B101
+        bookTitle:
+          type: string
+          example: The C++ Programming Language
+        borrowerName:
+          type: string
+          example: Alice Johnson
+        type:
+          type: string
+          enum: [ISSUE, RETURN]
+          example: ISSUE
+        timestamp:
+          type: string
+          example: "2026-11-17 01:05:00"
+
+    DashboardStats:
+      type: object
+      properties:
+        totalBooks:
+          type: integer
+          example: 6
+        availableBooks:
+          type: integer
+          example: 5
+        issuedBooks:
+          type: integer
+          example: 1
+        totalTransactions:
+          type: integer
+          example: 1
+
